@@ -1,0 +1,22 @@
+{
+  "name": "erase_i2c",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "i2c-bus": "^4.0.7"
+  },
+  "description": "Erase a 24C16 I2C memory.",
+  "main": "erase_i2c.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node erase_i2c.js"
+  },
+  "keywords": [
+    "node",
+    "erase",
+    "I2C",
+    "memory"
+  ],
+  "author": "Bruce J Snyder",
+  "license": "ISC"
+}
