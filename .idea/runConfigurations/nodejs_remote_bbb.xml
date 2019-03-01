@@ -1,0 +1,5 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="nodejs remote bbb" type="NodeJSConfigurationType" path-to-node="sftp://debian@beaglebone:22/home/debian/.nvm/current/bin/node" path-to-js-file="erase_i2c.js" working-dir="$PROJECT_DIR$">
+    <method v="2" />
+  </configuration>
+</component>

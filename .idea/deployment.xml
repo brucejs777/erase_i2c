@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" autoUpload="Always" serverName="Copy of project-level server 'BBB'">
+  <component name="PublishConfigData" autoUpload="Always">
     <serverData>
-      <paths name="Copy of project-level server 'BBB'">
+      <paths name="Beaglebone Black">
         <serverdata>
           <mappings>
             <mapping deploy="/projects/erase_i2c" local="$PROJECT_DIR$" web="/" />
