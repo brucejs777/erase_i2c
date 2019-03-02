@@ -33,14 +33,14 @@ i2cdump -y 2 0x50 b // get data b=bytes, w=words
 
 const assert = require('assert');
 
-process.stdout.write("process ver= " + process.version);
+process.stdout.write(`process ver = ${process.version}`);
 process.stdout.write('\n\terase_i2c.js - erase a 24C16 memory on Beaglebone Black I2C bus 1');
 
 const i2c = require('i2c-bus');
 
 const configPins = () => {
 // set up i/o pins for i2c1 on non-default pins of clk=24 amd dat=26
-    console.log('configuring i2c1 pins for SCL=24 and SDA=26');
+    console.log(`configuring i2c1 pins for SCL=24 and SDA=26`);
 
     const {execSync} = require('child_process');
 
@@ -51,9 +51,9 @@ const configPins = () => {
         execResult = execSync('config-pin -a P9_26 i2c');
         console.log(execResult);
     } catch (err) {
-        console.log('ERROR: problem configuring i2c pins; err code = :\n', err);
+        console.log(`ERROR: problem configuring i2c pins; err code = ${er}\n`);
     }
-}
+};
 
 
 // erase the i2c eeprom memory at address A2A1A0
@@ -64,24 +64,23 @@ const eraseMemory = (
 ) => {
     let startLoc = 0; // TODO: make this a param
     let bytesWritten = 0;
-    console.log('\n\tErasing I2C memory device at address ' + i2cAddress.toString(16));
+    console.log(`\n\tErasing I2C memory device at address ${i2cAddress.toString(16)}`);
 
     const i2c1 = i2c.openSync(busNum);
     const erasedData = Buffer.alloc(pageSize, fillByte);
 
     for (let byteAddr = startLoc; byteAddr < startLoc + numBytes; byteAddr += pageSize) {
-        // write
-        bytesWritten = i2c1.writeSync(i2cAddress, pageSize, erasedData);
+        bytesWritten = i2c1.i2cWriteSync(i2cAddress, pageSize, erasedData);
         waitFor(5);
-        process.stdout.write("number wrote: ", bytesWritten, '\n');
+        process.stdout.write(`number wrote = ${bytesWritten}\n`);
         if (bytesWritten !== pageSize) {
-            process.stdout.write('Error: only wrote $()')
+            process.stdout.write(`Error: not all bytes written`);
         }
     }
     process.stdout.write("\n");
 
     i2c1.closeSync();
-}
+};
 
 
 const readMemory = (
@@ -90,26 +89,26 @@ const readMemory = (
 ) => {
     assert.fail('not done yet');
     let startLoc = 0; // TODO: make this a param
-    console.log('\n\tErasing I2C memory device at address ' + i2cAddress.toString(16));
+    let readData = 0;
+    console.log(`\n\tErasing I2C memory device at address ${i2cAddress.toString(16)}`);
     const i2c1 = i2c.openSync(busNum);
 
     for (let byteAddr = startLoc; byteAddr < startLoc + numBytes; byteAddr++) {
         if (byteAddr % pageSize === 0) {
-            process.stdout.write("\n" +
-                ("0" + byteAddr.toString(16)).slice(-2) + ": ");
+            process.stdout.write(`\n${ ("0" + byteAddr.toString(16)).slice(-2) } : `);
         }
         if (byteAddr % (pageSize/2) === 0 && pageSize === 16) {
             process.stdout.write(" ");
         }
         // write
-        i2c1.writeByteSync(i2cAddress, byteAddr, fillByte);
-        waitFor(5);
-        process.stdout.write(fillByte.toString(16) + " ");
+        readData = i2c1.readByteSync(i2cAddress, byteAddr, fillByte);
+        //waitFor(5);
+        process.stdout.write(readData.toString(16) + " ");
     }
     process.stdout.write("\n");
 
     i2c1.closeSync();
-}
+};
 
 
 // time delay
@@ -119,7 +118,7 @@ const waitFor = (ms) => {
     const date = new Date(new Date().getTime() + ms);
     while (date > new Date()) {
     }
-}
+};
 
 
 const main = () => {
@@ -141,15 +140,15 @@ const main = () => {
         for (let addressLines = A2A1A0start; addressLines <= A2A1A0end; addressLines++) {
             console.log('erasing 256 bytes at address line= ',
                 addressLines.toString(16));
-            eraseMemory( i2cBusNum, MEMCHIP_ADDR + addressLines, byteOffset,
+            eraseMemory( i2cBusNum, MEMCHIP_ADDR + addressLines,
                 regionSize, testByte, chipPageSize);
         }
-    } catch {
-        console.log('error in erase; aborting op');
+    } catch (err) {
+        console.log(`main(): caught error in erase; aborting op, err = ${err}`);
     }
 
-    console.log('Finished;  ET = ', (Date.now() - startTime) / 1000 + ' secs');
-}
+    console.log(`Finished;  ET = ${ (Date.now() - startTime) / 1000 } secs`);
+};
 
 
 main();
