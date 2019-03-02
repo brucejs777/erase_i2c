@@ -1,28 +1,36 @@
 // erase_i2c.js
 
-// cloud9 proj folder from prev code (not this project) = debian@beaglebone:/var/lib/cloud9/_MY_PROJ
+
+// erase a 24C16 I2C memory
+
+// this was a cloud9 proj folder from prev code (not this project) = debian@beaglebone:/var/lib/cloud9/_MY_PROJ
 
 /*
+    webstorm notes
+
 ran in 13.1 secs for 2048 individual writes (no paging)
 
+    hardware notes
 NOTE: I HAD (before end of Feg '19) a 24C02 (256x8) strapped
 as address 0x51 (A2-A0 = pin3-1 = 001)
+( before we used BBB I2C port 2 on P9 pins 19=SCL and 20=SDA)
+but now using SCL=pin24 and SDA=pin26
 
 2-22-19 trying i2c bus 1 on pins 24 and 26 - use config-pin -a p9_24 i2c etc
 (must take original i2c mode off of pins 17-18 if set (but defaults to 'default')
 
-erase a 24C16 I2C memory
 note that the three address lines of the 24C16 A0-A2 are not used
 instead, the chip must be addressed from $A0 to $AE (8-bit) or $50 to $57
-note that the page size of the Microchip 24LC16B is 16 bytes
-the 24LC16B page write time is max 5ms
-( before we used BBB I2C port 2 on P9 pins 19=SCL and 20=SDA)
-but now using SCL=pin24 and SDA=pin26
+
 pullups not included on BBB; 3.3 Volt bus
 use 4.7k pullups to 3.3V and level translator or Schottkey diodes to +3.3V
 note: if connecting to  5V system then really only need pullups to 3.3V
 
-linux cmd line i2c tools: list busses; list devices; set; dump
+    i2c notes
+note that the page size of the Microchip 24LC16B is 16 bytes
+the 24LC16B page write time is max 5ms
+
+    linux i2c-tools cmd line tools: list busses; list devices; set; dump
 note bus number is zero-based; bbb uses bus 2 for p9-19/20 clk/data
 i2cdetect -l // list buses
 i2cdetect -r 2 // list devices found on bus
