@@ -42,7 +42,7 @@ i2cdump -y 2 0x50 b // get data b=bytes, w=words
 const assert = require('assert');
 
 process.stdout.write(`process ver = ${process.version}`);
-process.stdout.write('\n\terase_i2c.js - erase a 24C16 memory on Beaglebone Black I2C bus 1');
+process.stdout.write('\n\terase_i2c.js - erase a 24C16 memory on Beaglebone Black I2C bus 1 \n');
 
 const i2c = require('i2c-bus');
 
@@ -55,9 +55,9 @@ const configPins = () => {
     let execResult;
     try {
         execResult = execSync('config-pin -a P9_24 i2c');
-        console.log(execResult);
+        console.log(execResult.toString());
         execResult = execSync('config-pin -a P9_26 i2c');
-        console.log(execResult);
+        console.log(execResult.toString());
     } catch (err) {
         console.log(`ERROR: problem configuring i2c pins; err code = ${er}\n`);
     }
@@ -68,16 +68,20 @@ const configPins = () => {
 // chip page size pageSize
 const eraseMemory = (
     busNum, i2cAddress,
-    numBytes, fillByte=0xff, pageSize=16
+    numBytes, fillByte, pageSize
 ) => {
     let startLoc = 0; // TODO: make this a param
     let bytesWritten = 0;
-    console.log(`\n\tErasing I2C memory device at address ${i2cAddress.toString(16)}`);
+    console.log(`\n\teraseMemory(): Erasing ${numBytes} of I2C memory device \n`
+    + `at address ${i2cAddress.toString(16)} on bus # ${busNum};  \n`
+    + `fill byte = ${fillByte}, page size = ${pageSize}`);
 
     const i2c1 = i2c.openSync(busNum);
-    const erasedData = Buffer.alloc(pageSize, fillByte);
+    // TODO: const erasedData = Buffer.alloc(pageSize, fillByte);
+    const erasedData = Buffer.alloc(pageSize, i2cAddress);
 
     for (let byteAddr = startLoc; byteAddr < startLoc + numBytes; byteAddr += pageSize) {
+        console.log(`try to write ${pageSize} bytes at byte addr ${byteAddr}`);
         bytesWritten = i2c1.i2cWriteSync(i2cAddress, pageSize, erasedData);
         waitFor(5);
         process.stdout.write(`number wrote = ${bytesWritten}\n`);
@@ -90,15 +94,15 @@ const eraseMemory = (
     i2c1.closeSync();
 };
 
-
+/*
 const readMemory = (
     busNum, i2cAddress,
     numBytes, fillByte=0xff, pageSize=16
 ) => {
-    assert.fail('not done yet');
+    assert.fail('readMemory() is not done yet');
     let startLoc = 0; // TODO: make this a param
     let readData = 0;
-    console.log(`\n\tErasing I2C memory device at address ${i2cAddress.toString(16)}`);
+    console.log(`\n\treadMemory(): I2C memory device at address ${i2cAddress.toString(16)}`);
     const i2c1 = i2c.openSync(busNum);
 
     for (let byteAddr = startLoc; byteAddr < startLoc + numBytes; byteAddr++) {
@@ -117,7 +121,7 @@ const readMemory = (
 
     i2c1.closeSync();
 };
-
+*/
 
 // time delay
 // we need this because the hardware has a 5ms write time
@@ -139,15 +143,14 @@ const main = () => {
     let totalMemSize = 2048;
     let regionSize = totalMemSize < 256 ? totalMemSize : 256;
     let chipPageSize = 16;
-    let testByte = 0xff; // test data
+    let testByte = 0; // test data
 
     configPins();
 
     // write same byte to all spec mem locs
     try {
         for (let addressLines = A2A1A0start; addressLines <= A2A1A0end; addressLines++) {
-            console.log('erasing 256 bytes at address line= ',
-                addressLines.toString(16));
+            console.log(`erasing ${regionSize} bytes at address line = ${addressLines.toString(16)}` );
             eraseMemory( i2cBusNum, MEMCHIP_ADDR + addressLines,
                 regionSize, testByte, chipPageSize);
         }
