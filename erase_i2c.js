@@ -46,8 +46,9 @@ process.stdout.write('\n\terase_i2c.js - erase a 24C16 memory on Beaglebone Blac
 
 const i2c = require('i2c-bus');
 
-const configPins = () => {
+
 // set up i/o pins for i2c1 on non-default pins of clk=24 amd dat=26
+const configPins = () => {
     console.log(`configuring i2c1 pins for SCL=24 and SDA=26`);
 
     const {execSync} = require('child_process');
@@ -64,38 +65,45 @@ const configPins = () => {
 };
 
 
-// make array of various test patterns for memory testing
-// array can be put into a Buffer with Buffer.from(array)
+// set array of various test patterns of bytes for memory testing
+// array can be shared memory of a Buffer using Buffer.from(array.buffer)
 // x is fast and horiz, y is slower and vert, z is slowest
-const makeTestData = function(x, y, z) {
-    let result = [];
-    for (let i = 0; i < x; i++)
-        result[i] = i;
-    return result;
+const makeTestData = function(ary, size, y, z) {
+    for (let x = 0; x < size; x++) {
+        ary[x] = (x + z) % 16; // lower nibble, counts w/ offset
+        ary[x] |= (y & 0xf0); // upper nibble
+    }
 };
 
 
 // erase the i2c eeprom memory at address A2A1A0
 // chip page size pageSize
+// TODO: temp using test data pattern instead of all ones to debug
 const eraseMemory = (
     busNum, i2cAddress,
     numBytes, fillByte, pageSize
 ) => {
     let startLoc = 0; // TODO: make this a param
     let bytesWritten = 0;
+    let chipArray = new Uint8Array(16);
+    let chipBuf = Buffer.from(chipArray.buffer); // shared memory
+
     console.log(`\n\teraseMemory(): Erasing ${numBytes} of I2C memory device \n`
     + `at address ${i2cAddress.toString(16)} on bus # ${busNum};  \n`
-    + `fill byte = ${fillByte}, page size = ${pageSize}`);
+    + `fill byte = ${fillByte.toString(16)}, page size = ${pageSize}`);
 
     const i2c1 = i2c.openSync(busNum);
-    // TODO: const erasedData = Buffer.alloc(pageSize, fillByte);
-    let erasedData = Buffer.from( makeTestData(pageSize, 0, 0) );
+    // TODO: const chipBuf = Buffer.alloc(pageSize, fillByte);
 
     for (let byteAddr = startLoc; byteAddr < startLoc + numBytes; byteAddr += pageSize) {
-        console.log(`try to write ${pageSize} bytes at byte addr ${byteAddr}`);
-        bytesWritten = i2c1.i2cWriteSync(i2cAddress, pageSize, erasedData);
+        makeTestData(chipArray, pageSize, byteAddr & 0xf0, i2cAddress & 0x0f);
+        console.log(`chip=${i2cAddress.toString(16)}; `
+            + `mem addr=${byteAddr.toString(16)}; `
+            + `data=${ chipArray.map(val => val.toString(16)) }`);
+            //+ `data=${ chipArray }`);
+        bytesWritten = i2c1.i2cWriteSync(i2cAddress, pageSize, chipBuf);
         waitFor(5);
-        process.stdout.write(`number wrote = ${bytesWritten}\n`);
+        //process.stdout.write(`number wrote = ${bytesWritten}\n`);
         if (bytesWritten !== pageSize) {
             process.stdout.write(`Error: not all bytes written`);
         }
@@ -105,34 +113,6 @@ const eraseMemory = (
     i2c1.closeSync();
 };
 
-/*
-const readMemory = (
-    busNum, i2cAddress,
-    numBytes, fillByte=0xff, pageSize=16
-) => {
-    assert.fail('readMemory() is not done yet');
-    let startLoc = 0; // TODO: make this a param
-    let readData = 0;
-    console.log(`\n\treadMemory(): I2C memory device at address ${i2cAddress.toString(16)}`);
-    const i2c1 = i2c.openSync(busNum);
-
-    for (let byteAddr = startLoc; byteAddr < startLoc + numBytes; byteAddr++) {
-        if (byteAddr % pageSize === 0) {
-            process.stdout.write(`\n${ ("0" + byteAddr.toString(16)).slice(-2) } : `);
-        }
-        if (byteAddr % (pageSize/2) === 0 && pageSize === 16) {
-            process.stdout.write(" ");
-        }
-        // write
-        readData = i2c1.readByteSync(i2cAddress, byteAddr, fillByte);
-        //waitFor(5);
-        process.stdout.write(readData.toString(16) + " ");
-    }
-    process.stdout.write("\n");
-
-    i2c1.closeSync();
-};
-*/
 
 // time delay
 // we need this because the hardware has a 5ms write time
@@ -144,6 +124,8 @@ const waitFor = (ms) => {
 };
 
 
+// *** *** *** App Main *** *** ***
+//
 const main = () => {
     let startTime = Date.now();
     let i2cBusNum = 1;
@@ -173,5 +155,6 @@ const main = () => {
 };
 
 
+// Just call main()
 main();
 
